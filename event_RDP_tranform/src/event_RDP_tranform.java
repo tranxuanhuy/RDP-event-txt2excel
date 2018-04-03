@@ -11,10 +11,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.BorderStyle;
@@ -64,6 +67,14 @@ public class event_RDP_tranform {
 		frmRdpEventTxtexcel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frmRdpEventTxtexcel.getContentPane().setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 
+		//create folder to save data export if not exist
+		try {
+			Files.createDirectories(Paths.get(System.getProperty("user.dir")+"/data export"));
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+		
 		JButton btnOpen = new JButton("select event file (1 txt -> 1 xls)");
 		btnOpen.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
@@ -77,10 +88,12 @@ public class event_RDP_tranform {
 					try {
 						for (int i = 0; i < selectedFile.length; i++) {
 							// dataTransform(selectedFile[i].getParent(), selectedFile[i].getName());
-							String excelFilePath = selectedFile[i].getName() + ".xls";
+							String excelFilePath = System.getProperty("user.dir") + "\\data export\\" + selectedFile[i].getName() + ".xls";
 							writeExcel(selectedFile[i].getAbsolutePath(),
-									selectedFile[i].getParent() + "\\" + excelFilePath);
+									excelFilePath);
 						}
+						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
+						        JOptionPane.INFORMATION_MESSAGE);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -109,10 +122,26 @@ public class event_RDP_tranform {
 						fileLocations[i] = new File(selectedFile[i].getAbsolutePath());
 					}
 					mergeFiles(fileLocations, allContentFile);
-					String excelFilePath = "FormattedJavaBooks.xls";
+					
+					//form for user choose location where save the xls file
+					JFileChooser fileChooser1 = new JFileChooser(System.getProperty("user.dir") + "\\data export\\");
+					fileChooser.setDialogTitle("Specify a file to save");   	
+					int userSelection = fileChooser1.showSaveDialog(frmRdpEventTxtexcel);
+					File fileToSave=null;
+					if (userSelection == JFileChooser.APPROVE_OPTION) {
+					    fileToSave = fileChooser1.getSelectedFile();
+					    System.out.println("Save as file: " + fileToSave.getAbsolutePath());
+					}
+					else {
+						return;
+					}
+			        
+					String excelFilePath = fileToSave.getAbsolutePath()+".xls";
 					try {
 						writeExcel(allContentFile.getAbsolutePath(),
-								selectedFile[0].getParent() + "\\" + excelFilePath);
+								excelFilePath);
+						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
+						        JOptionPane.INFORMATION_MESSAGE);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -235,15 +264,15 @@ public class event_RDP_tranform {
 		Cell cellTitle = row.createCell(1);
 
 		cellTitle.setCellStyle(cellStyle);
-		cellTitle.setCellValue("Title");
+		cellTitle.setCellValue("Reserved for title");
 
-		Cell cellAuthor = row.createCell(2);
-		cellAuthor.setCellStyle(cellStyle);
-		cellAuthor.setCellValue("Author");
-
-		Cell cellPrice = row.createCell(3);
-		cellPrice.setCellStyle(cellStyle);
-		cellPrice.setCellValue("Price");
+//		Cell cellAuthor = row.createCell(2);
+//		cellAuthor.setCellStyle(cellStyle);
+//		cellAuthor.setCellValue("Author");
+//
+//		Cell cellPrice = row.createCell(3);
+//		cellPrice.setCellStyle(cellStyle);
+//		cellPrice.setCellValue("Price");
 	}
 
 	private void writeBook(String line, Row row, CellStyle cellStyle) {
