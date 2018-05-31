@@ -6,13 +6,18 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -256,15 +261,53 @@ public class event_RDP_tranform {
 		CellStyle cellStyle = sheet.getWorkbook().createCellStyle();
 		Font font = sheet.getWorkbook().createFont();
 		font.setBold(true);
-		font.setColor((short) 5);
-		font.setFontHeightInPoints((short) 16);
+//		font.setColor((short) 5);
+//		font.setFontHeightInPoints((short) 16);
 		cellStyle.setFont(font);
+		
+		List<String> lines = new ArrayList<String>();	
+		try {
+			File fileDir = new File("header.txt");
+				
+			BufferedReader in = new BufferedReader(
+			   new InputStreamReader(
+	                      new FileInputStream(fileDir), "UTF8"));
+			        
+			String str;
+			      
+			while ((str = in.readLine()) != null) {
+				lines.add(str);
+			}
+			        
+	                in.close();
+		    } 
+		    catch (UnsupportedEncodingException e) 
+		    {
+				System.out.println(e.getMessage());
+		    } 
+		    catch (IOException e) 
+		    {
+				System.out.println(e.getMessage());
+		    }
+		    catch (Exception e)
+		    {
+				System.out.println(e.getMessage());
+		    }
+		
+		
+
+		String[] toppings = lines.toArray(new String[0]);
+
+
 
 		Row row = sheet.createRow(0);
-		Cell cellTitle = row.createCell(1);
-
-		cellTitle.setCellStyle(cellStyle);
-		cellTitle.setCellValue("Reserved for title");
+		Cell cellTitle;
+		for (int i = 0; i < toppings.length; i++) {
+			cellTitle = row.createCell(i);
+			cellTitle.setCellStyle(cellStyle);
+			cellTitle.setCellValue(toppings[i]);
+			sheet.autoSizeColumn(i);
+		}
 
 //		Cell cellAuthor = row.createCell(2);
 //		cellAuthor.setCellStyle(cellStyle);

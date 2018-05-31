@@ -1,0 +1,18 @@
+Ngày
+Giờ (UTC)
+Server tạo cảnh báo
+Loại cảnh báo
+SSR code máy bay 1
+Sector máy bay 1
+MSAW, APW: Vùng cảnh báo máy bay 1 - STCA: Vĩ độ máy bay 1
+Kinh độ máy bay 1
+Độ cao máy bay 1 (FL)
+Thời gian đến điểm xung đột của máy bay 1
+SSR code máy bay 2
+Sector máy bay 2
+Vĩ độ máy bay 2
+Kinh độ máy bay 2
+Độ cao máy bay 2 (FL)
+Thời gian đến điểm xung đột của máy bay 2
+Trạng thái (cảnh báo, vi phạm, kết thúc)
+Thời gian dự đoán xung đột
