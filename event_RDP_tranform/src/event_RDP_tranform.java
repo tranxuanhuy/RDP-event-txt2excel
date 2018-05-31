@@ -97,7 +97,7 @@ public class event_RDP_tranform {
 							writeExcel(selectedFile[i].getAbsolutePath(),
 									excelFilePath);
 						}
-						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
+						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed\nFile exported in data export folder", "Dialog",
 						        JOptionPane.INFORMATION_MESSAGE);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
@@ -253,7 +253,15 @@ public class event_RDP_tranform {
 
 		try (FileOutputStream outputStream = new FileOutputStream(excelFilePath)) {
 			workbook.write(outputStream);
+			
 		}
+	 catch (Exception e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		JOptionPane.showMessageDialog(new JFrame(), "Excel file is opening, please close it!", "Dialog",
+		        JOptionPane.INFORMATION_MESSAGE);
+		System.exit(0);
+	}
 	}
 
 	private void createHeaderRow(Sheet sheet) {
@@ -301,12 +309,15 @@ public class event_RDP_tranform {
 
 
 		Row row = sheet.createRow(0);
+		row.setHeight((short) 1800);
 		Cell cellTitle;
+		cellStyle.setWrapText(true);
 		for (int i = 0; i < toppings.length; i++) {
 			cellTitle = row.createCell(i);
 			cellTitle.setCellStyle(cellStyle);
 			cellTitle.setCellValue(toppings[i]);
-			sheet.autoSizeColumn(i);
+			sheet.setColumnWidth(i, 3000);
+			
 		}
 
 //		Cell cellAuthor = row.createCell(2);
