@@ -40,13 +40,26 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JTable;
+import javax.swing.RowFilter;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import javax.swing.JScrollPane;
+import javax.swing.JCheckBox;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+
+import java.awt.GridLayout;
+import java.awt.CardLayout;
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
+import java.awt.BorderLayout;
+import javax.swing.JPanel;
 
 public class event_RDP_tranform {
 
 	private JFrame frmRdpEventTxtexcel;
 	private JTable table;
+	protected DefaultTableModel dm;
 
 	/**
 	 * Launch the application.
@@ -89,7 +102,6 @@ public class event_RDP_tranform {
 		}
 		
 		JButton btnOpen = new JButton("select event file (1 txt -> 1 xls)");
-		btnOpen.setBounds(214, 11, 183, 23);
 		btnOpen.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JFileChooser fileChooser = new JFileChooser();
@@ -117,7 +129,6 @@ public class event_RDP_tranform {
 		});
 
 		JButton btnSelectEventFile = new JButton("select event file (many txt -> 1 xls)");
-		btnSelectEventFile.setBounds(10, 11, 203, 23);
 		btnSelectEventFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JFileChooser fileChooser = new JFileChooser();
@@ -203,11 +214,7 @@ public class event_RDP_tranform {
 			}
 		});
 		
-		frmRdpEventTxtexcel.getContentPane().add(btnSelectEventFile);
-		frmRdpEventTxtexcel.getContentPane().add(btnOpen);
-		
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(10, 45, 473, 280);
 		
 		
 		table = new JTable() {public boolean getScrollableTracksViewportWidth()
@@ -240,6 +247,46 @@ public class event_RDP_tranform {
 		});
 		JMenuBar menuBar = new JMenuBar();
 		frmRdpEventTxtexcel.setJMenuBar(menuBar);
+		frmRdpEventTxtexcel.getContentPane().setLayout(new BorderLayout(0, 0));
+		
+		JPanel mainPanel = new JPanel();
+		frmRdpEventTxtexcel.getContentPane().add(mainPanel, BorderLayout.NORTH);
+		mainPanel.setLayout(new BorderLayout(0, 0));
+		
+		JPanel topPanel = new JPanel();
+		mainPanel.add(topPanel, BorderLayout.NORTH);
+		topPanel.setLayout(new BoxLayout(topPanel, BoxLayout.X_AXIS));
+		
+		String[] food = {"MSAW", "STCA", "APW"};
+
+		JCheckBox[] boxes = new JCheckBox[food.length]; //  Each checkbox will get a name of food from food array.  
+		
+		for(int i = 0; i < boxes.length; i++)
+		{
+			boxes[i] = new JCheckBox(food[i]);
+			boxes[i].setSelected(true);
+		
+			topPanel.add(boxes[i]);	
+		}
+		
+		JButton btnNewButton = new JButton("Filter");
+		btnNewButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				TableRowSorter<DefaultTableModel> tr=new TableRowSorter<DefaultTableModel>(dm);
+				table.setRowSorter(tr);
+				
+				List<RowFilter<Object,Object>> filters = new ArrayList<RowFilter<Object,Object>>(2);
+				
+				for(JCheckBox box:boxes)
+				if(box.isSelected())
+				   filters.add(RowFilter.regexFilter(box.getText()));
+				   RowFilter<Object,Object> fooBarFilter = RowFilter.orFilter(filters);
+				   tr.setRowFilter(fooBarFilter);
+			}
+		});
+		topPanel.add(btnNewButton);
+		frmRdpEventTxtexcel.getContentPane().add(btnSelectEventFile);
+		frmRdpEventTxtexcel.getContentPane().add(btnOpen);
 		frmRdpEventTxtexcel.getContentPane().add(scrollPane);
 		JMenu mnFile = new JMenu("File");
 		menuBar.add(mnFile);
@@ -274,7 +321,7 @@ public class event_RDP_tranform {
 				BufferedReader br = new BufferedReader(new FileReader(absolutePath));
 				String line = null;
 
-				DefaultTableModel dm=(DefaultTableModel) table.getModel();
+				dm=(DefaultTableModel) table.getModel();
 				while ((line = br.readLine()) != null) {
 					
 					if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
