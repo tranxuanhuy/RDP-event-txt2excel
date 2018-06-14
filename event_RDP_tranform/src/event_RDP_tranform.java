@@ -2,6 +2,8 @@ import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -34,10 +36,17 @@ import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.JScrollPane;
 
 public class event_RDP_tranform {
 
 	private JFrame frmRdpEventTxtexcel;
+	private JTable table;
 
 	/**
 	 * Launch the application.
@@ -68,9 +77,8 @@ public class event_RDP_tranform {
 	private void initialize() {
 		frmRdpEventTxtexcel = new JFrame();
 		frmRdpEventTxtexcel.setTitle("RDP-event txt2excel");
-		frmRdpEventTxtexcel.setBounds(100, 100, 283, 101);
+		frmRdpEventTxtexcel.setBounds(100, 100, 501, 384);
 		frmRdpEventTxtexcel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frmRdpEventTxtexcel.getContentPane().setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 
 		//create folder to save data export if not exist
 		try {
@@ -81,6 +89,7 @@ public class event_RDP_tranform {
 		}
 		
 		JButton btnOpen = new JButton("select event file (1 txt -> 1 xls)");
+		btnOpen.setBounds(214, 11, 183, 23);
 		btnOpen.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JFileChooser fileChooser = new JFileChooser();
@@ -108,6 +117,7 @@ public class event_RDP_tranform {
 		});
 
 		JButton btnSelectEventFile = new JButton("select event file (many txt -> 1 xls)");
+		btnSelectEventFile.setBounds(10, 11, 203, 23);
 		btnSelectEventFile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				JFileChooser fileChooser = new JFileChooser();
@@ -192,8 +202,101 @@ public class event_RDP_tranform {
 
 			}
 		});
+		
 		frmRdpEventTxtexcel.getContentPane().add(btnSelectEventFile);
 		frmRdpEventTxtexcel.getContentPane().add(btnOpen);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(10, 45, 473, 280);
+		
+		
+		table = new JTable() {public boolean getScrollableTracksViewportWidth()
+        {
+            return getPreferredSize().width < getParent().getWidth();
+        }};
+		table.setModel(new DefaultTableModel(
+			new Object[][] {
+				{new Integer(1), "John", new Double(40.0), Boolean.FALSE, "", null, null, null, null, null, null, null, null, null, null, null, null, null},
+				{new Integer(2), "Rambo", new Double(70.0), Boolean.FALSE, null, null, null, null, null, null, null, null, null, null, null, null, null, null},
+				{new Integer(3), "Zorro", new Double(60.0), Boolean.TRUE, null, null, null, null, null, null, null, null, null, null, null, null, null, null},
+			},
+			new String[] {
+				"New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column"
+			}
+		));
+		
+	
+	
+		scrollPane.setViewportView(table);
+		table.getParent().addComponentListener(new ComponentAdapter() {
+		    @Override
+		    public void componentResized(final ComponentEvent e) {
+		        if (table.getPreferredSize().width < table.getParent().getWidth()) {
+		        	table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+		        } else {
+		        	table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		        }
+		    }
+		});
+		JMenuBar menuBar = new JMenuBar();
+		frmRdpEventTxtexcel.setJMenuBar(menuBar);
+		frmRdpEventTxtexcel.getContentPane().add(scrollPane);
+		JMenu mnFile = new JMenu("File");
+		menuBar.add(mnFile);
+		
+		JMenuItem mntmOpen = new JMenuItem("Open");
+		mntmOpen.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setMultiSelectionEnabled(true);
+				int returnValue = fileChooser.showOpenDialog(null);
+				if (returnValue == JFileChooser.APPROVE_OPTION) {
+					File[] selectedFile = fileChooser.getSelectedFiles();
+					System.out.println(selectedFile);
+
+					for (int i = 0; i < selectedFile.length; i++) {
+						try {
+							populate(selectedFile[i].getAbsolutePath());
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+
+					}
+					JOptionPane.showMessageDialog(new JFrame(), "Transformation completed\nFile exported in data export folder", "Dialog",
+					        JOptionPane.INFORMATION_MESSAGE);
+				}
+			}
+
+			private void populate(String absolutePath) throws IOException {
+				// TODO Auto-generated method stub
+				BufferedReader br = new BufferedReader(new FileReader(absolutePath));
+				String line = null;
+
+				DefaultTableModel dm=(DefaultTableModel) table.getModel();
+				while ((line = br.readLine()) != null) {
+					
+					if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
+						line = lineTablingCorrection(line);
+						String[] rowdata= line.split(",");
+						dm.addRow(rowdata);
+					}
+				}
+
+			
+				try {
+					br.close();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		});
+		mnFile.add(mntmOpen);
+		
+		JMenuItem menuItem = new JMenuItem("New menu item");
+		mnFile.add(menuItem);
 	}
 
 	protected void writeExcel(String sourceFile, String excelFilePath) throws IOException {
@@ -330,6 +433,20 @@ public class event_RDP_tranform {
 	}
 
 	private void writeBook(String line, Row row, CellStyle cellStyle) {
+		line = lineTablingCorrection(line);
+
+		// write data to workbook
+		Cell cell;
+		int i = 0;
+		for (String infoInLine : line.split(",")) {
+			cell = row.createCell(i++);
+			cell.setCellValue(infoInLine);
+			cell.setCellStyle(cellStyle);
+		}
+
+	}
+
+	private String lineTablingCorrection(String line) {
 		line = line.replaceAll("      ", " ,").trim().replaceAll(" +", " ").replace(' ', ',');
 
 		// STCA VI, END thieu 2 truong nen chen 2 truong blank vao
@@ -352,15 +469,6 @@ public class event_RDP_tranform {
 				index = line.indexOf(",", index + 1);
 			line = new StringBuffer(line).insert(index, ",,,,,,,,,").toString();
 		}
-
-		// write data to workbook
-		Cell cell;
-		int i = 0;
-		for (String infoInLine : line.split(",")) {
-			cell = row.createCell(i++);
-			cell.setCellValue(infoInLine);
-			cell.setCellStyle(cellStyle);
-		}
-
+		return line;
 	}
 }
