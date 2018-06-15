@@ -42,14 +42,19 @@ import javax.swing.JMenuItem;
 import javax.swing.JTable;
 import javax.swing.RowFilter;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableRowSorter;
 import javax.swing.JScrollPane;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 
 import java.awt.GridLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Component;
+
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import java.awt.BorderLayout;
@@ -174,77 +179,12 @@ public class event_RDP_tranform {
 					}
 				}
 			}
-
-			private void mergeFiles(File[] files, File mergedFile) {
-
-				FileWriter fstream = null;
-				BufferedWriter out = null;
-				try {
-					fstream = new FileWriter(mergedFile, true);
-					out = new BufferedWriter(fstream);
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
-
-				for (File f : files) {
-					System.out.println("merging: " + f.getName());
-					FileInputStream fis;
-					try {
-						fis = new FileInputStream(f);
-						BufferedReader in = new BufferedReader(new InputStreamReader(fis));
-
-						String aLine;
-						while ((aLine = in.readLine()) != null) {
-							out.write(aLine);
-							out.newLine();
-						}
-
-						in.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-
-				try {
-					out.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-			}
 		});
 		
 		JScrollPane scrollPane = new JScrollPane();
 		
 		
-		table = new JTable() {public boolean getScrollableTracksViewportWidth()
-        {
-            return getPreferredSize().width < getParent().getWidth();
-        }};
-		table.setModel(new DefaultTableModel(
-			new Object[][] {
-				{new Integer(1), "John", new Double(40.0), Boolean.FALSE, "", null, null, null, null, null, null, null, null, null, null, null, null, null},
-				{new Integer(2), "Rambo", new Double(70.0), Boolean.FALSE, null, null, null, null, null, null, null, null, null, null, null, null, null, null},
-				{new Integer(3), "Zorro", new Double(60.0), Boolean.TRUE, null, null, null, null, null, null, null, null, null, null, null, null, null, null},
-			},
-			new String[] {
-				"New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column"
-			}
-		));
 		
-	
-	
-		scrollPane.setViewportView(table);
-		table.getParent().addComponentListener(new ComponentAdapter() {
-		    @Override
-		    public void componentResized(final ComponentEvent e) {
-		        if (table.getPreferredSize().width < table.getParent().getWidth()) {
-		        	table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-		        } else {
-		        	table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		        }
-		    }
-		});
 		JMenuBar menuBar = new JMenuBar();
 		frmRdpEventTxtexcel.setJMenuBar(menuBar);
 		frmRdpEventTxtexcel.getContentPane().setLayout(new BorderLayout(0, 0));
@@ -302,9 +242,20 @@ public class event_RDP_tranform {
 					File[] selectedFile = fileChooser.getSelectedFiles();
 					System.out.println(selectedFile);
 
+					// copy content nhieu file event txt lai thanh 1 file txt roi moi chuyen file
+					// txt do qua excel
+					new File("NewFile.txt").delete();
+					File allContentFile = new File("NewFile.txt");
+					File[] fileLocations = new File[selectedFile.length];
+
+					for (int i = 0; i < selectedFile.length; i++) {
+						fileLocations[i] = new File(selectedFile[i].getAbsolutePath());
+					}
+					mergeFiles(fileLocations, allContentFile);
+					
 					for (int i = 0; i < selectedFile.length; i++) {
 						try {
-							populate(selectedFile[i].getAbsolutePath());
+							populate(allContentFile.getAbsolutePath());
 						} catch (IOException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -321,7 +272,12 @@ public class event_RDP_tranform {
 				BufferedReader br = new BufferedReader(new FileReader(absolutePath));
 				String line = null;
 
-				dm=(DefaultTableModel) table.getModel();
+				dm=new DefaultTableModel(
+						null,
+						new String[] {
+							"New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column"
+						}
+					);
 				while ((line = br.readLine()) != null) {
 					
 					if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
@@ -331,13 +287,62 @@ public class event_RDP_tranform {
 					}
 				}
 
-			
+				table =(JTable) createData(dm);
+				scrollPane.setViewportView(table);
+				table.getParent().addComponentListener(new ComponentAdapter() {
+				    @Override
+				    public void componentResized(final ComponentEvent e) {
+				        if (table.getPreferredSize().width < table.getParent().getWidth()) {
+				        	table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+				        } else {
+				        	table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+				        }
+				    }
+				});
+				
 				try {
 					br.close();
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+			}
+
+			private JComponent createData(DefaultTableModel model)
+			{
+				
+			
+			
+				
+				
+				
+				JTable table = new JTable( model )
+				{
+					
+					public Component prepareRenderer(TableCellRenderer renderer, int row, int column)
+					{
+						Component c = super.prepareRenderer(renderer, row, column);
+
+						//  Color row based on a cell value
+
+						if (!isRowSelected(row))
+						{
+							c.setBackground(getBackground());
+							int modelRow = convertRowIndexToModel(row);
+							String type = (String)getModel().getValueAt(modelRow, 16);
+							if ("VI".equals(type)) c.setBackground(Color.RED);
+							if ("PR".equals(type)) c.setBackground(Color.YELLOW);
+						}
+
+						return c;
+					}
+				};
+				
+				
+				table.setPreferredScrollableViewportSize(table.getPreferredSize());
+				table.changeSelection(0, 0, false, false);
+		        table.setAutoCreateRowSorter(true);
+				return table;
 			}
 		});
 		mnFile.add(mntmOpen);
@@ -477,6 +482,44 @@ public class event_RDP_tranform {
 //		Cell cellPrice = row.createCell(3);
 //		cellPrice.setCellStyle(cellStyle);
 //		cellPrice.setCellValue("Price");
+	}
+
+	private void mergeFiles(File[] files, File mergedFile) {
+	
+		FileWriter fstream = null;
+		BufferedWriter out = null;
+		try {
+			fstream = new FileWriter(mergedFile, true);
+			out = new BufferedWriter(fstream);
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+	
+		for (File f : files) {
+			System.out.println("merging: " + f.getName());
+			FileInputStream fis;
+			try {
+				fis = new FileInputStream(f);
+				BufferedReader in = new BufferedReader(new InputStreamReader(fis));
+	
+				String aLine;
+				while ((aLine = in.readLine()) != null) {
+					out.write(aLine);
+					out.newLine();
+				}
+	
+				in.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	
+		try {
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	
 	}
 
 	private void writeBook(String line, Row row, CellStyle cellStyle) {
