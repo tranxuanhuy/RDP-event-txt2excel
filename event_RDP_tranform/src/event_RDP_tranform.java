@@ -47,6 +47,7 @@ import javax.swing.table.TableRowSorter;
 import javax.swing.JScrollPane;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+import javax.swing.AbstractButton;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 
@@ -59,6 +60,8 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class event_RDP_tranform {
 
@@ -106,81 +109,6 @@ public class event_RDP_tranform {
 			e2.printStackTrace();
 		}
 		
-		JButton btnOpen = new JButton("select event file (1 txt -> 1 xls)");
-		btnOpen.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				JFileChooser fileChooser = new JFileChooser();
-				fileChooser.setMultiSelectionEnabled(true);
-				int returnValue = fileChooser.showOpenDialog(null);
-				if (returnValue == JFileChooser.APPROVE_OPTION) {
-					File[] selectedFile = fileChooser.getSelectedFiles();
-					System.out.println(selectedFile);
-
-					try {
-						for (int i = 0; i < selectedFile.length; i++) {
-							// dataTransform(selectedFile[i].getParent(), selectedFile[i].getName());
-							String excelFilePath = System.getProperty("user.dir") + "\\data export\\" + selectedFile[i].getName() + ".xls";
-							writeExcel(selectedFile[i].getAbsolutePath(),
-									excelFilePath);
-						}
-						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed\nFile exported in data export folder", "Dialog",
-						        JOptionPane.INFORMATION_MESSAGE);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-		});
-
-		JButton btnSelectEventFile = new JButton("select event file (many txt -> 1 xls)");
-		btnSelectEventFile.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				JFileChooser fileChooser = new JFileChooser();
-				fileChooser.setMultiSelectionEnabled(true);
-				int returnValue = fileChooser.showOpenDialog(null);
-				if (returnValue == JFileChooser.APPROVE_OPTION) {
-					File[] selectedFile = fileChooser.getSelectedFiles();
-					System.out.println(selectedFile);
-
-					// copy content nhieu file event txt lai thanh 1 file txt roi moi chuyen file
-					// txt do qua excel
-					new File("NewFile.txt").delete();
-					File allContentFile = new File("NewFile.txt");
-					File[] fileLocations = new File[selectedFile.length];
-
-					for (int i = 0; i < selectedFile.length; i++) {
-						fileLocations[i] = new File(selectedFile[i].getAbsolutePath());
-					}
-					mergeFiles(fileLocations, allContentFile);
-					
-					//form for user choose location where save the xls file
-					JFileChooser fileChooser1 = new JFileChooser(System.getProperty("user.dir") + "\\data export\\");
-					fileChooser.setDialogTitle("Specify a file to save");   	
-					int userSelection = fileChooser1.showSaveDialog(frmRdpEventTxtexcel);
-					File fileToSave=null;
-					if (userSelection == JFileChooser.APPROVE_OPTION) {
-					    fileToSave = fileChooser1.getSelectedFile();
-					    System.out.println("Save as file: " + fileToSave.getAbsolutePath());
-					}
-					else {
-						return;
-					}
-			        
-					String excelFilePath = fileToSave.getAbsolutePath()+".xls";
-					try {
-						writeExcel(allContentFile.getAbsolutePath(),
-								excelFilePath);
-						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
-						        JOptionPane.INFORMATION_MESSAGE);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
-			}
-		});
-		
 		JScrollPane scrollPane = new JScrollPane();
 		
 		
@@ -225,8 +153,6 @@ public class event_RDP_tranform {
 			}
 		});
 		topPanel.add(btnNewButton);
-		frmRdpEventTxtexcel.getContentPane().add(btnSelectEventFile);
-		frmRdpEventTxtexcel.getContentPane().add(btnOpen);
 		frmRdpEventTxtexcel.getContentPane().add(scrollPane);
 		JMenu mnFile = new JMenu("File");
 		menuBar.add(mnFile);
@@ -349,6 +275,179 @@ public class event_RDP_tranform {
 		
 		JMenuItem menuItem = new JMenuItem("New menu item");
 		mnFile.add(menuItem);
+		
+		JMenu mnExport = new JMenu("Export");
+		menuBar.add(mnExport);
+		
+		JMenuItem mntmNewMenuItem = new JMenuItem("select event file (many txt -> 1 xls)");
+		mntmNewMenuItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setMultiSelectionEnabled(true);
+				int returnValue = fileChooser.showOpenDialog(null);
+				if (returnValue == JFileChooser.APPROVE_OPTION) {
+					File[] selectedFile = fileChooser.getSelectedFiles();
+					System.out.println(selectedFile);
+
+					// copy content nhieu file event txt lai thanh 1 file txt roi moi chuyen file
+					// txt do qua excel
+					new File("NewFile.txt").delete();
+					File allContentFile = new File("NewFile.txt");
+					File[] fileLocations = new File[selectedFile.length];
+
+					for (int i = 0; i < selectedFile.length; i++) {
+						fileLocations[i] = new File(selectedFile[i].getAbsolutePath());
+					}
+					mergeFiles(fileLocations, allContentFile);
+					
+					//form for user choose location where save the xls file
+					JFileChooser fileChooser1 = new JFileChooser(System.getProperty("user.dir") + "\\data export\\");
+					fileChooser.setDialogTitle("Specify a file to save");   	
+					int userSelection = fileChooser1.showSaveDialog(frmRdpEventTxtexcel);
+					File fileToSave=null;
+					if (userSelection == JFileChooser.APPROVE_OPTION) {
+					    fileToSave = fileChooser1.getSelectedFile();
+					    System.out.println("Save as file: " + fileToSave.getAbsolutePath());
+					}
+					else {
+						return;
+					}
+			        
+					String excelFilePath = fileToSave.getAbsolutePath()+".xls";
+					try {
+						writeExcel(allContentFile.getAbsolutePath(),
+								excelFilePath);
+						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
+						        JOptionPane.INFORMATION_MESSAGE);
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+			}
+		
+			
+		});
+		
+		mnExport.add(mntmNewMenuItem);
+		
+		JMenuItem mntmSelectEventFile = new JMenuItem("select event file (1 txt -> 1 xls)");
+		mntmSelectEventFile.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setMultiSelectionEnabled(true);
+				int returnValue = fileChooser.showOpenDialog(null);
+				if (returnValue == JFileChooser.APPROVE_OPTION) {
+					File[] selectedFile = fileChooser.getSelectedFiles();
+					System.out.println(selectedFile);
+
+					try {
+						for (int i = 0; i < selectedFile.length; i++) {
+							// dataTransform(selectedFile[i].getParent(), selectedFile[i].getName());
+							String excelFilePath = System.getProperty("user.dir") + "\\data export\\" + selectedFile[i].getName() + ".xls";
+							writeExcel(selectedFile[i].getAbsolutePath(),
+									excelFilePath);
+						}
+						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed\nFile exported in data export folder", "Dialog",
+						        JOptionPane.INFORMATION_MESSAGE);
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+				}
+			}
+		
+			
+		});
+		mnExport.add(mntmSelectEventFile);
+		
+		JMenuItem mntmPirintableExport = new JMenuItem("Printable export");
+		mntmPirintableExport.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				 boolean[] alertType= chooseAlertTypeToExport_Window();
+
+					JFileChooser fileChooser = new JFileChooser();
+					fileChooser.setMultiSelectionEnabled(true);
+					int returnValue = fileChooser.showOpenDialog(null);
+					if (returnValue == JFileChooser.APPROVE_OPTION) {
+						File[] selectedFile = fileChooser.getSelectedFiles();
+						System.out.println(selectedFile);
+
+						// copy content nhieu file event txt lai thanh 1 file txt roi moi chuyen file
+						// txt do qua excel
+						new File("NewFile.txt").delete();
+						File allContentFile = new File("NewFile.txt");
+						File[] fileLocations = new File[selectedFile.length];
+
+						for (int i = 0; i < selectedFile.length; i++) {
+							fileLocations[i] = new File(selectedFile[i].getAbsolutePath());
+						}
+						mergeFiles(fileLocations, allContentFile);
+						
+						//form for user choose location where save the xls file
+						JFileChooser fileChooser1 = new JFileChooser(System.getProperty("user.dir") + "\\data export\\");
+						fileChooser.setDialogTitle("Specify a file to save");   	
+						int userSelection = fileChooser1.showSaveDialog(frmRdpEventTxtexcel);
+						File fileToSave=null;
+						if (userSelection == JFileChooser.APPROVE_OPTION) {
+						    fileToSave = fileChooser1.getSelectedFile();
+						    System.out.println("Save as file: " + fileToSave.getAbsolutePath());
+						}
+						else {
+							return;
+						}
+				        
+						String excelFilePath = fileToSave.getAbsolutePath()+".xls";
+						try {
+							writeExcel(allContentFile.getAbsolutePath(),
+									excelFilePath);
+							JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
+							        JOptionPane.INFORMATION_MESSAGE);
+						} catch (IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+					}
+				
+
+			}
+
+			/**
+			 * @return 
+			 * 
+			 */
+			private boolean[] chooseAlertTypeToExport_Window() {
+				String[] genres = {"MSAW", "STCA", "APW","PR", "VI", "END"};
+				    JCheckBox[] check = new JCheckBox[genres.length];
+
+				    for(int i = 0; i < genres.length; i++)
+				        check[i] = new JCheckBox(genres[i]);    
+
+				    boolean[] ret = new boolean[genres.length];     
+
+				    int answer = JOptionPane.showConfirmDialog(null, new Object[]{"Choose gernes:", check}, "Genres" , JOptionPane.OK_CANCEL_OPTION);
+
+				    if(answer == JOptionPane.OK_OPTION)
+				    {
+				        for(int i = 0;i < genres.length ; i++)
+				            ret[i] = check[i].isSelected();
+
+				    }else if(answer == JOptionPane.CANCEL_OPTION || answer == JOptionPane.ERROR_MESSAGE)
+				    {
+				        for(int i = 0; i < genres.length; i++)
+				            ret[i] = false;
+				    }
+
+				    return ret;
+			}
+		});
+		mnExport.add(mntmPirintableExport);
+		
+		JMenu mnHelp = new JMenu("Help");
+		menuBar.add(mnHelp);
+		
+		JMenuItem mntmAbout = new JMenuItem("About");
+		mnHelp.add(mntmAbout);
 	}
 
 	protected void writeExcel(String sourceFile, String excelFilePath) throws IOException {
