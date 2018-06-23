@@ -18,6 +18,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
@@ -68,7 +69,7 @@ public class event_RDP_tranform {
 	private JFrame frmRdpEventTxtexcel;
 	private JTable table;
 	protected DefaultTableModel dm;
-
+	String[] alertTypes = {"MSAW", "STCA", "APW","PR", "VI", "END"};
 	/**
 	 * Launch the application.
 	 */
@@ -315,7 +316,7 @@ public class event_RDP_tranform {
 			        
 					String excelFilePath = fileToSave.getAbsolutePath()+".xls";
 					try {
-						writeExcel(allContentFile.getAbsolutePath(),
+						writeExcelColorFill(allContentFile.getAbsolutePath(),
 								excelFilePath);
 						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
 						        JOptionPane.INFORMATION_MESSAGE);
@@ -345,7 +346,7 @@ public class event_RDP_tranform {
 						for (int i = 0; i < selectedFile.length; i++) {
 							// dataTransform(selectedFile[i].getParent(), selectedFile[i].getName());
 							String excelFilePath = System.getProperty("user.dir") + "\\data export\\" + selectedFile[i].getName() + ".xls";
-							writeExcel(selectedFile[i].getAbsolutePath(),
+							writeExcelColorFill(selectedFile[i].getAbsolutePath(),
 									excelFilePath);
 						}
 						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed\nFile exported in data export folder", "Dialog",
@@ -366,50 +367,143 @@ public class event_RDP_tranform {
 			public void actionPerformed(ActionEvent e) {
 				 boolean[] alertType= chooseAlertTypeToExport_Window();
 
-					JFileChooser fileChooser = new JFileChooser();
-					fileChooser.setMultiSelectionEnabled(true);
-					int returnValue = fileChooser.showOpenDialog(null);
-					if (returnValue == JFileChooser.APPROVE_OPTION) {
-						File[] selectedFile = fileChooser.getSelectedFiles();
-						System.out.println(selectedFile);
+				 //neu user chon 1 checkbox o chooseAlertTypeToExport_Window thi thuc hien xuat file theo option duoc chon 
+					if (Arrays.asList(alertType).contains(true)) {
+						JFileChooser fileChooser = new JFileChooser();
+						fileChooser.setMultiSelectionEnabled(true);
+						int returnValue = fileChooser.showOpenDialog(null);
+						if (returnValue == JFileChooser.APPROVE_OPTION) {
+							File[] selectedFile = fileChooser.getSelectedFiles();
+							System.out.println(selectedFile);
 
-						// copy content nhieu file event txt lai thanh 1 file txt roi moi chuyen file
-						// txt do qua excel
-						new File("NewFile.txt").delete();
-						File allContentFile = new File("NewFile.txt");
-						File[] fileLocations = new File[selectedFile.length];
+							// copy content nhieu file event txt lai thanh 1 file txt roi moi chuyen file
+							// txt do qua excel
+							new File("NewFile.txt").delete();
+							File allContentFile = new File("NewFile.txt");
+							File[] fileLocations = new File[selectedFile.length];
 
-						for (int i = 0; i < selectedFile.length; i++) {
-							fileLocations[i] = new File(selectedFile[i].getAbsolutePath());
-						}
-						mergeFiles(fileLocations, allContentFile);
-						
-						//form for user choose location where save the xls file
-						JFileChooser fileChooser1 = new JFileChooser(System.getProperty("user.dir") + "\\data export\\");
-						fileChooser.setDialogTitle("Specify a file to save");   	
-						int userSelection = fileChooser1.showSaveDialog(frmRdpEventTxtexcel);
-						File fileToSave=null;
-						if (userSelection == JFileChooser.APPROVE_OPTION) {
-						    fileToSave = fileChooser1.getSelectedFile();
-						    System.out.println("Save as file: " + fileToSave.getAbsolutePath());
-						}
-						else {
-							return;
-						}
-				        
-						String excelFilePath = fileToSave.getAbsolutePath()+".xls";
-						try {
-							writeExcel(allContentFile.getAbsolutePath(),
-									excelFilePath);
-							JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
-							        JOptionPane.INFORMATION_MESSAGE);
-						} catch (IOException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
+							for (int i = 0; i < selectedFile.length; i++) {
+								fileLocations[i] = new File(selectedFile[i].getAbsolutePath());
+							}
+							mergeFiles(fileLocations, allContentFile);
+
+							//form for user choose location where save the xls file
+							JFileChooser fileChooser1 = new JFileChooser(
+									System.getProperty("user.dir") + "\\data export\\");
+							fileChooser.setDialogTitle("Specify a file to save");
+							int userSelection = fileChooser1.showSaveDialog(frmRdpEventTxtexcel);
+							File fileToSave = null;
+							if (userSelection == JFileChooser.APPROVE_OPTION) {
+								fileToSave = fileChooser1.getSelectedFile();
+								System.out.println("Save as file: " + fileToSave.getAbsolutePath());
+							} else {
+								return;
+							}
+
+							String excelFilePath = fileToSave.getAbsolutePath() + ".xls";
+							try {
+								writeExcelPrintable(allContentFile.getAbsolutePath(), excelFilePath,alertType,selectedFile);
+								JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
+										JOptionPane.INFORMATION_MESSAGE);
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+						} 
 					}
 				
 
+			}
+
+			private void writeExcelPrintable(String sourceFile, String excelFilePath, boolean[] alertType, File[] selectedFile) throws IOException {
+				Workbook workbook = new HSSFWorkbook();
+				Sheet[] sheets;
+				
+				//tinh so sheet tao ra: loai canh bao * loai PR VI END * so file event moi ngay
+				int alertTypeMsawStcaApw=0;
+				for (int i = 0; i < alertType.length/2; i++) {
+					if (alertType[i]) {
+						alertTypeMsawStcaApw++;
+					}
+				}
+				int alertTypePrViEnd=0;
+				for (int i = alertType.length/2; i < alertType.length; i++) {
+					if (alertType[i]) {
+						alertTypePrViEnd++;
+					}
+				}
+				
+				
+					for (int i = 0; i < selectedFile.length; i++) {
+						for (int j = 0; j < alertTypeMsawStcaApw; j++) {
+							for (int k = 0; k < alertTypePrViEnd; k++) {
+							sheets=workbook
+							}
+						}
+					}
+				createHeaderRow(sheet);
+
+				int rowCount = 0;
+
+				BufferedReader br = new BufferedReader(new FileReader(sourceFile));
+				String line = null;
+
+				CellStyle cellStylePR = sheet.getWorkbook().createCellStyle();
+				CellStyle cellStyleVI = sheet.getWorkbook().createCellStyle();
+				CellStyle cellStyleEND = sheet.getWorkbook().createCellStyle();
+
+				cellStylePR.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+				cellStylePR.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+				cellStyleVI.setFillForegroundColor(IndexedColors.RED.index);
+				cellStyleVI.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+				cellStyleEND.setFillForegroundColor(IndexedColors.WHITE.getIndex());
+				cellStyleEND.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+				cellStylePR.setBorderLeft(BorderStyle.THIN);
+				cellStylePR.setBorderBottom(BorderStyle.THIN);
+				cellStylePR.setBorderRight(BorderStyle.THIN);
+				cellStylePR.setBorderTop(BorderStyle.THIN);
+				cellStyleVI.setBorderLeft(BorderStyle.THIN);
+				cellStyleVI.setBorderBottom(BorderStyle.THIN);
+				cellStyleVI.setBorderRight(BorderStyle.THIN);
+				cellStyleVI.setBorderTop(BorderStyle.THIN);
+				cellStyleEND.setBorderLeft(BorderStyle.THIN);
+				cellStyleEND.setBorderBottom(BorderStyle.THIN);
+				cellStyleEND.setBorderRight(BorderStyle.THIN);
+				cellStyleEND.setBorderTop(BorderStyle.THIN);
+
+				while ((line = br.readLine()) != null) {
+					if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
+						Row row = sheet.createRow(++rowCount);
+						if (line.contains("PR")) {
+							writeBook(line, row, cellStylePR);
+						} else if (line.contains("VI")) {
+							writeBook(line, row, cellStyleVI);
+						} else {
+							writeBook(line, row, cellStyleEND);
+
+						}
+					}
+				}
+
+				try {
+					br.close();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				try (FileOutputStream outputStream = new FileOutputStream(excelFilePath)) {
+					workbook.write(outputStream);
+					
+				}
+			 catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				JOptionPane.showMessageDialog(new JFrame(), "Excel file is opening, please close it!", "Dialog",
+				        JOptionPane.INFORMATION_MESSAGE);
+				System.exit(0);
+			}
+				
 			}
 
 			/**
@@ -417,24 +511,24 @@ public class event_RDP_tranform {
 			 * 
 			 */
 			private boolean[] chooseAlertTypeToExport_Window() {
-				String[] genres = {"MSAW", "STCA", "APW","PR", "VI", "END"};
-				    JCheckBox[] check = new JCheckBox[genres.length];
+				
+				    JCheckBox[] check = new JCheckBox[alertTypes.length];
 
-				    for(int i = 0; i < genres.length; i++)
-				        check[i] = new JCheckBox(genres[i]);    
+				    for(int i = 0; i < alertTypes.length; i++)
+				        check[i] = new JCheckBox(alertTypes[i]);    
 
-				    boolean[] ret = new boolean[genres.length];     
+				    boolean[] ret = new boolean[alertTypes.length];     
 
 				    int answer = JOptionPane.showConfirmDialog(null, new Object[]{"Choose gernes:", check}, "Genres" , JOptionPane.OK_CANCEL_OPTION);
 
 				    if(answer == JOptionPane.OK_OPTION)
 				    {
-				        for(int i = 0;i < genres.length ; i++)
+				        for(int i = 0;i < alertTypes.length ; i++)
 				            ret[i] = check[i].isSelected();
 
 				    }else if(answer == JOptionPane.CANCEL_OPTION || answer == JOptionPane.ERROR_MESSAGE)
 				    {
-				        for(int i = 0; i < genres.length; i++)
+				        for(int i = 0; i < alertTypes.length; i++)
 				            ret[i] = false;
 				    }
 
@@ -450,7 +544,7 @@ public class event_RDP_tranform {
 		mnHelp.add(mntmAbout);
 	}
 
-	protected void writeExcel(String sourceFile, String excelFilePath) throws IOException {
+	protected void writeExcelColorFill(String sourceFile, String excelFilePath) throws IOException {
 		Workbook workbook = new HSSFWorkbook();
 		Sheet sheet = workbook.createSheet();
 
