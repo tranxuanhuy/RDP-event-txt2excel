@@ -365,10 +365,10 @@ public class event_RDP_tranform {
 		JMenuItem mntmPirintableExport = new JMenuItem("Printable export");
 		mntmPirintableExport.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				 boolean[] alertType= chooseAlertTypeToExport_Window();
+				 boolean[] alertTypeChoosen= chooseAlertTypeToExport_Window();
 
-				 //neu user chon 1 checkbox o chooseAlertTypeToExport_Window thi thuc hien xuat file theo option duoc chon 
-					if (Arrays.asList(alertType).contains(true)) {
+				 //neu user chon 1 checkbox trong 3 options MSAW STCA APW va 1 checkbox trong 3 options PR VI END o chooseAlertTypeToExport_Window thi thuc hien xuat file theo option duoc chon 
+					if (minimumConditionChoosen(alertTypeChoosen)) {
 						JFileChooser fileChooser = new JFileChooser();
 						fileChooser.setMultiSelectionEnabled(true);
 						int returnValue = fileChooser.showOpenDialog(null);
@@ -402,7 +402,7 @@ public class event_RDP_tranform {
 
 							String excelFilePath = fileToSave.getAbsolutePath() + ".xls";
 							try {
-								writeExcelPrintable(allContentFile.getAbsolutePath(), excelFilePath,alertType,selectedFile);
+								writeExcelPrintable(allContentFile.getAbsolutePath(), excelFilePath,alertTypeChoosen,selectedFile);
 								JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
 										JOptionPane.INFORMATION_MESSAGE);
 							} catch (IOException e1) {
@@ -415,42 +415,75 @@ public class event_RDP_tranform {
 
 			}
 
-			private void writeExcelPrintable(String sourceFile, String excelFilePath, boolean[] alertType, File[] selectedFile) throws IOException {
+			private boolean minimumConditionChoosen(boolean[] alertTypeChoosen) {
+				return containsTrue(Arrays.copyOfRange(alertTypeChoosen, 0, alertTypeChoosen.length/2))&&containsTrue(Arrays.copyOfRange(alertTypeChoosen, alertTypeChoosen.length/2, alertTypeChoosen.length));
+				
+			}
+
+			private boolean containsTrue(boolean[] array){
+
+			    for(boolean val : array){
+			        if(val)
+			            return true;
+			    }
+
+			    return false;
+			}
+
+			private void writeExcelPrintable(String sourceFile, String excelFilePath, boolean[] alertTypeChoosen, File[] selectedFile) throws IOException {
 				Workbook workbook = new HSSFWorkbook();
-				Sheet[] sheets;
+				
 				
 				//tinh so sheet tao ra: loai canh bao * loai PR VI END * so file event moi ngay
 				int alertTypeMsawStcaApw=0;
-				for (int i = 0; i < alertType.length/2; i++) {
-					if (alertType[i]) {
+				for (int i = 0; i < alertTypeChoosen.length/2; i++) {
+					if (alertTypeChoosen[i]) {
 						alertTypeMsawStcaApw++;
 					}
 				}
 				int alertTypePrViEnd=0;
-				for (int i = alertType.length/2; i < alertType.length; i++) {
-					if (alertType[i]) {
+				for (int i = alertTypeChoosen.length/2; i < alertTypeChoosen.length; i++) {
+					if (alertTypeChoosen[i]) {
 						alertTypePrViEnd++;
 					}
 				}
 				
 				
 					for (int i = 0; i < selectedFile.length; i++) {
-						for (int j = 0; j < alertTypeMsawStcaApw; j++) {
-							for (int k = 0; k < alertTypePrViEnd; k++) {
-							sheets=workbook
+						for (int j = 0; j < 3; j++) {
+							for (int k = 0; k < 3; k++) {
+							if (alertTypeChoosen[j]&&alertTypeChoosen[k+3]) {
+								
+								workbook.createSheet(selectedFile[i].getName() + alertTypes[j] + alertTypes[k + 3]);
+							}
 							}
 						}
 					}
-				createHeaderRow(sheet);
-
+					
+					
+				ArrayList<Sheet> sheets = new ArrayList<Sheet>();
+				for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+					sheets.add(workbook.getSheetAt(i));  
+				      //.... code to print the sheet's values here
+				}
+				for (Sheet sheet:sheets) {
+					createHeaderRow(sheet);
+				}
+				
 				int rowCount = 0;
 
 				BufferedReader br = new BufferedReader(new FileReader(sourceFile));
 				String line = null;
 
-				CellStyle cellStylePR = sheet.getWorkbook().createCellStyle();
-				CellStyle cellStyleVI = sheet.getWorkbook().createCellStyle();
-				CellStyle cellStyleEND = sheet.getWorkbook().createCellStyle();
+				CellStyle cellStylePR = null;
+				CellStyle cellStyleVI = null;
+				CellStyle cellStyleEND = null;
+				
+				for (Sheet sheet:sheets) {
+					cellStylePR = sheet.getWorkbook().createCellStyle();
+					cellStyleVI = sheet.getWorkbook().createCellStyle();
+					cellStyleEND = sheet.getWorkbook().createCellStyle();
+				}
 
 				cellStylePR.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
 				cellStylePR.setFillPattern(FillPatternType.SOLID_FOREGROUND);
@@ -473,12 +506,17 @@ public class event_RDP_tranform {
 
 				while ((line = br.readLine()) != null) {
 					if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
-						Row row = sheet.createRow(++rowCount);
+						
 						if (line.contains("PR")) {
+							
+							Row row = sheets.get(workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"PR")).createRow(++rowCount);
 							writeBook(line, row, cellStylePR);
+							
 						} else if (line.contains("VI")) {
+							Row row = sheets.get(workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"VI")).createRow(++rowCount);
 							writeBook(line, row, cellStyleVI);
 						} else {
+							Row row = sheets.get(workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"END")).createRow(++rowCount);
 							writeBook(line, row, cellStyleEND);
 
 						}
@@ -517,6 +555,12 @@ public class event_RDP_tranform {
 				    for(int i = 0; i < alertTypes.length; i++)
 				        check[i] = new JCheckBox(alertTypes[i]);    
 
+				    //set default checkbox is checked
+				    check[0].setSelected(true);
+				    check[1].setSelected(true);
+				    check[4].setSelected(true);
+				    
+				    
 				    boolean[] ret = new boolean[alertTypes.length];     
 
 				    int answer = JOptionPane.showConfirmDialog(null, new Object[]{"Choose gernes:", check}, "Genres" , JOptionPane.OK_CANCEL_OPTION);
