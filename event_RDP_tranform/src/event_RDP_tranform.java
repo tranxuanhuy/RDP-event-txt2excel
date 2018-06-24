@@ -435,16 +435,16 @@ public class event_RDP_tranform {
 				
 				
 				//tinh so sheet tao ra: loai canh bao * loai PR VI END * so file event moi ngay
-				int alertTypeMsawStcaApw=0;
+				List<String> alertTypeMsawStcaApwChoosen=new ArrayList<String>();
 				for (int i = 0; i < alertTypeChoosen.length/2; i++) {
 					if (alertTypeChoosen[i]) {
-						alertTypeMsawStcaApw++;
+						alertTypeMsawStcaApwChoosen.add(alertTypes[i]);
 					}
 				}
-				int alertTypePrViEnd=0;
+				List<String> alertTypePrViEndChoosen=new ArrayList<String>();
 				for (int i = alertTypeChoosen.length/2; i < alertTypeChoosen.length; i++) {
 					if (alertTypeChoosen[i]) {
-						alertTypePrViEnd++;
+						alertTypePrViEndChoosen.add(alertTypes[i]);
 					}
 				}
 				
@@ -470,54 +470,32 @@ public class event_RDP_tranform {
 					createHeaderRow(sheet);
 				}
 				
-				int rowCount = 0;
-
+				int[] rowCount = new int[workbook.getNumberOfSheets()];
+				Arrays.fill(rowCount, 0);
+				
 				BufferedReader br = new BufferedReader(new FileReader(sourceFile));
 				String line = null;
 
-				CellStyle cellStylePR = null;
-				CellStyle cellStyleVI = null;
-				CellStyle cellStyleEND = null;
 				
-				for (Sheet sheet:sheets) {
-					cellStylePR = sheet.getWorkbook().createCellStyle();
-					cellStyleVI = sheet.getWorkbook().createCellStyle();
-					cellStyleEND = sheet.getWorkbook().createCellStyle();
-				}
-
-				cellStylePR.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
-				cellStylePR.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-				cellStyleVI.setFillForegroundColor(IndexedColors.RED.index);
-				cellStyleVI.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-				cellStyleEND.setFillForegroundColor(IndexedColors.WHITE.getIndex());
-				cellStyleEND.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-				cellStylePR.setBorderLeft(BorderStyle.THIN);
-				cellStylePR.setBorderBottom(BorderStyle.THIN);
-				cellStylePR.setBorderRight(BorderStyle.THIN);
-				cellStylePR.setBorderTop(BorderStyle.THIN);
-				cellStyleVI.setBorderLeft(BorderStyle.THIN);
-				cellStyleVI.setBorderBottom(BorderStyle.THIN);
-				cellStyleVI.setBorderRight(BorderStyle.THIN);
-				cellStyleVI.setBorderTop(BorderStyle.THIN);
-				cellStyleEND.setBorderLeft(BorderStyle.THIN);
-				cellStyleEND.setBorderBottom(BorderStyle.THIN);
-				cellStyleEND.setBorderRight(BorderStyle.THIN);
-				cellStyleEND.setBorderTop(BorderStyle.THIN);
+				
 
 				while ((line = br.readLine()) != null) {
-					if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
+					if (stringContainAnElementFromListOfString(line,alertTypeMsawStcaApwChoosen)&&stringContainAnElementFromListOfString(line, alertTypePrViEndChoosen)) {
 						
 						if (line.contains("PR")) {
 							
-							Row row = sheets.get(workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"PR")).createRow(++rowCount);
-							writeBook(line, row, cellStylePR);
+							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"PR");
+							Row row = sheets.get(sheetIndex).createRow(++rowCount[sheetIndex]);
+							writeBook(line, row, null);
 							
 						} else if (line.contains("VI")) {
-							Row row = sheets.get(workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"VI")).createRow(++rowCount);
-							writeBook(line, row, cellStyleVI);
+							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"VI");
+							Row row = sheets.get(sheetIndex).createRow(++rowCount[sheetIndex]);
+							writeBook(line, row, null);
 						} else {
-							Row row = sheets.get(workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"END")).createRow(++rowCount);
-							writeBook(line, row, cellStyleEND);
+							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"END");
+							Row row = sheets.get(sheetIndex).createRow(++rowCount[sheetIndex]);
+							writeBook(line, row, null);
 
 						}
 					}
@@ -542,6 +520,24 @@ public class event_RDP_tranform {
 				System.exit(0);
 			}
 				
+			}
+
+
+
+			private boolean stringContainAnElementFromListOfString(String line,
+					List<String> list) {
+
+				   String string = line;
+
+				    boolean match = false;
+				    for (String s : list) {
+				       if(string.contains(s)){
+				           match = true;
+				           break;
+				       }
+				    }
+//				   System.out.println(match);
+				return match;
 			}
 
 			/**
@@ -774,20 +770,143 @@ public class event_RDP_tranform {
 	}
 
 	private String lineTablingCorrection(String line) {
-		line = line.replaceAll("      ", " ,").trim().replaceAll(" +", " ").replace(' ', ',');
+		line = line.trim().replaceAll(" +", " ").replace(' ', ',');
 
-		// STCA VI, END thieu 2 truong nen chen 2 truong blank vao
-		if ((line.contains("STCA") && line.contains("END")) || line.contains("STCA") && line.contains("VI")) {
+		//MSAW, APW ko co sector control thi thi them 1 tab giua ssr code va vung canh bao
+		if ((line.contains("MSAW") && line.split(",").length==7) || (line.contains("APW")&& line.split(",").length==7)) {
 			int index = 0;
-			for (int i = 0; i < 9; i++)
-				index = line.indexOf(",", index + 1);
-			line = new StringBuffer(line).insert(index, ",").toString();
-
-			for (int i = 0; i < 6; i++)
+			for (int i = 0; i < 5; i++)
 				index = line.indexOf(",", index + 1);
 			line = new StringBuffer(line).insert(index, ",").toString();
 		}
+			
+		// xu ly STCA
+		if (line.contains("STCA")) {
+			if (line.contains("PR")) {
+				//1 trong 2 may bay ko co sector dk && PR && do dai 17
+				if (line.split(",").length == 17) {
+					//mb 1 ko co sector dk
+					if (line.split(",")[5].contains("N")) {
+						int index = 0;
+						for (int i = 0; i < 5; i++)
+							index = line.indexOf(",", index + 1);
+						line = new StringBuffer(line).insert(index, ",").toString();
+					}
 
+					//mb 2 ko co sector dk
+					if (line.split(",")[11].contains("N")) {
+						int index = 0;
+						for (int i = 0; i < 11; i++)
+							index = line.indexOf(",", index + 1);
+						line = new StringBuffer(line).insert(index, ",").toString();
+					}
+
+				}
+				//ca 2 may bay ko co sector dk && PR && do dai 16			
+				if (line.split(",").length == 16 ) {
+					//mb 2 ko co sector dk
+					if (line.split(",")[11].contains("N")) {
+						int index = 0;
+						for (int i = 0; i < 11; i++)
+							index = line.indexOf(",", index + 1);
+						line = new StringBuffer(line).insert(index, ",").toString();
+					}
+					//mb 1 ko co sector dk
+					if (line.split(",")[5].contains("N")) {
+						int index = 0;
+						for (int i = 0; i < 5; i++)
+							index = line.indexOf(",", index + 1);
+						line = new StringBuffer(line).insert(index, ",").toString();
+					}
+				} 
+			}
+			if (line.contains("VI")||line.contains("END")) {
+				//1 trong 2 may bay ko co sector dk && END && do dai 14
+				if (line.split(",").length == 14 ) {
+					//mb 1 ko co sector dk
+					if (line.split(",")[5].contains("N")) {
+						int index = 0;
+						for (int i = 0; i < 5; i++)
+							index = line.indexOf(",", index + 1);
+						line = new StringBuffer(line).insert(index, ",").toString();
+
+					}
+
+					//mb 2 ko co sector dk
+					if (line.split(",")[10].contains("N")) {
+						int index = 0;
+						for (int i = 0; i < 10; i++)
+							index = line.indexOf(",", index + 1);
+						line = new StringBuffer(line).insert(index, ",").toString();
+
+					}
+
+					int index = 0;
+					for (int i = 0; i < 9; i++)
+						index = line.indexOf(",", index + 1);
+					line = new StringBuffer(line).insert(index, ",").toString();
+					for (int i = 0; i < 6; i++)
+						index = line.indexOf(",", index + 1);
+					line = new StringBuffer(line).insert(index, ",").toString();
+
+				}
+				//ca 2 may bay ko co sector dk && END && do dai 13
+				if (line.split(",").length == 13 ) {
+					//mb 1 ko co sector dk
+					if (line.split(",")[5].contains("N")) {
+						int index = 0;
+						for (int i = 0; i < 5; i++)
+							index = line.indexOf(",", index + 1);
+						line = new StringBuffer(line).insert(index, ",").toString();
+
+					}
+
+					//mb 2 ko co sector dk
+					if (line.split(",")[10].contains("N")) {
+						int index = 0;
+						for (int i = 0; i < 10; i++)
+							index = line.indexOf(",", index + 1);
+						line = new StringBuffer(line).insert(index, ",").toString();
+
+					}
+
+					int index = 0;
+					for (int i = 0; i < 9; i++)
+						index = line.indexOf(",", index + 1);
+					line = new StringBuffer(line).insert(index, ",").toString();
+					for (int i = 0; i < 6; i++)
+						index = line.indexOf(",", index + 1);
+					line = new StringBuffer(line).insert(index, ",").toString();
+
+				}
+				//ca 2 may bay co sector dk && END && do dai 15
+				if (line.split(",").length == 15) {
+
+					int index = 0;
+					for (int i = 0; i < 9; i++)
+						index = line.indexOf(",", index + 1);
+					line = new StringBuffer(line).insert(index, ",").toString();
+					for (int i = 0; i < 6; i++)
+						index = line.indexOf(",", index + 1);
+					line = new StringBuffer(line).insert(index, ",").toString();
+
+				} 
+			}
+
+		}
+	
+//		// STCA VI, END thieu 2 truong nen chen 2 truong blank vao
+//		if ((line.contains("STCA") && line.contains("END")) || line.contains("STCA") && line.contains("VI")) {
+//			int index = 0;
+//			for (int i = 0; i < 9; i++)
+//				index = line.indexOf(",", index + 1);
+//			line = new StringBuffer(line).insert(index, ",").toString();
+//
+//			for (int i = 0; i < 6; i++)
+//				index = line.indexOf(",", index + 1);
+//			line = new StringBuffer(line).insert(index, ",").toString();
+//		}
+//
 		// dua loai canh bao (VI, PR, END) cua MSAW va APW cung cot voi cac canh bao cua
 		// STCA
 		if (line.contains("MSAW") || line.contains("APW")) {
