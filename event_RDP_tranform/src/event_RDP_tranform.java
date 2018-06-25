@@ -17,8 +17,11 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Scanner;
 
@@ -67,6 +70,8 @@ import java.awt.BorderLayout;
 import javax.swing.JPanel;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import javax.swing.JTextPane;
+import javax.swing.JTextArea;
 
 public class event_RDP_tranform {
 
@@ -74,6 +79,7 @@ public class event_RDP_tranform {
 	private JTable table;
 	protected DefaultTableModel dm;
 	String[] alertTypes = {"MSAW", "STCA", "APW","PR", "VI", "END"};
+	private JTextArea textArea;
 	/**
 	 * Launch the application.
 	 */
@@ -159,6 +165,23 @@ public class event_RDP_tranform {
 		});
 		topPanel.add(btnNewButton);
 		frmRdpEventTxtexcel.getContentPane().add(scrollPane);
+		
+		JPanel bottomPanel = new JPanel();
+		frmRdpEventTxtexcel.getContentPane().add(bottomPanel, BorderLayout.SOUTH);
+		bottomPanel.setLayout(new BorderLayout(0, 0));
+		
+		JPanel panel = new JPanel();
+		bottomPanel.add(panel, BorderLayout.NORTH);
+		panel.setLayout(new BorderLayout(0, 0));
+		
+		textArea = new JTextArea();
+		textArea.setToolTipText("Error display, if there are any text in this display, please contact author because there are some exported data error!");
+		textArea.setLineWrap(true);
+		textArea.setWrapStyleWord(true);
+		textArea.setRows(3);
+		textArea.setEditable(false);
+		JScrollPane scroll = new JScrollPane(textArea);
+		panel.add(scroll, BorderLayout.NORTH);
 		JMenu mnFile = new JMenu("File");
 		menuBar.add(mnFile);
 		
@@ -542,22 +565,6 @@ public class event_RDP_tranform {
 
 
 
-			private boolean stringContainAnElementFromListOfString(String line,
-					List<String> list) {
-
-				   String string = line;
-
-				    boolean match = false;
-				    for (String s : list) {
-				       if(string.contains(s)){
-				           match = true;
-				           break;
-				       }
-				    }
-//				   System.out.println(match);
-				return match;
-			}
-
 			/**
 			 * @return 
 			 * 
@@ -795,145 +802,26 @@ public class event_RDP_tranform {
 	}
 
 	private String lineTablingCorrection(String line) {
-		line = line.trim().replaceAll(" +", " ").replace(' ', ',');
-
-		//MSAW, APW ko co sector control thi thi them 1 tab giua ssr code va vung canh bao
-		if ((line.contains("MSAW") && line.split(",").length==7) || (line.contains("APW")&& line.split(",").length==7)) {
+		line = line.replaceAll("      ", " ,").replaceAll("( +)"," ").trim().replace(", " , ",").replace(' ', ',');
+		
+		try {
+		    Files.write(Paths.get("myfile.txt"), (line+"\n").getBytes(), StandardOpenOption.APPEND);
+		}catch (IOException e) {
+		    //exception handling left as an exercise for the reader
+		}
+		
+		// STCA VI, END thieu 2 truong nen chen 2 truong blank vao
+		if ((line.contains("STCA") && line.contains("END")) || line.contains("STCA") && line.contains("VI")) {
 			int index = 0;
-			for (int i = 0; i < 5; i++)
+			for (int i = 0; i < 9; i++)
+				index = line.indexOf(",", index + 1);
+			line = new StringBuffer(line).insert(index, ",").toString();
+
+			for (int i = 0; i < 6; i++)
 				index = line.indexOf(",", index + 1);
 			line = new StringBuffer(line).insert(index, ",").toString();
 		}
-			
-		// xu ly STCA
-		if (line.contains("STCA")) {
-			//xu ly STCA PR
-			if (line.contains("PR")) {
-				//1 trong 2 may bay ko co sector dk && PR && do dai 17
-				if (line.split(",").length == 17) {
-					//mb 1 ko co sector dk
-					if (line.split(",")[5].contains("N")) {
-						int index = 0;
-						for (int i = 0; i < 5; i++)
-							index = line.indexOf(",", index + 1);
-						line = new StringBuffer(line).insert(index, ",").toString();
-					}
 
-					//mb 2 ko co sector dk
-					if (line.split(",")[11].contains("N")) {
-						int index = 0;
-						for (int i = 0; i < 11; i++)
-							index = line.indexOf(",", index + 1);
-						line = new StringBuffer(line).insert(index, ",").toString();
-					}
-
-				}
-				//ca 2 may bay ko co sector dk && PR && do dai 16			
-				if (line.split(",").length == 16 ) {
-					//mb 2 ko co sector dk
-					if (line.split(",")[11].contains("N")) {
-						int index = 0;
-						for (int i = 0; i < 11; i++)
-							index = line.indexOf(",", index + 1);
-						line = new StringBuffer(line).insert(index, ",").toString();
-					}
-					//mb 1 ko co sector dk
-					if (line.split(",")[5].contains("N")) {
-						int index = 0;
-						for (int i = 0; i < 5; i++)
-							index = line.indexOf(",", index + 1);
-						line = new StringBuffer(line).insert(index, ",").toString();
-					}
-				} 
-			}
-			//xu ly STCA VI END
-			if (line.contains("VI")||line.contains("END")) {
-				//1 trong 2 may bay ko co sector dk && END && do dai 14
-				if (line.split(",").length == 14 ) {
-					//mb 1 ko co sector dk
-					if (line.split(",")[5].contains("N")) {
-						int index = 0;
-						for (int i = 0; i < 5; i++)
-							index = line.indexOf(",", index + 1);
-						line = new StringBuffer(line).insert(index, ",").toString();
-
-					}
-
-					//mb 2 ko co sector dk
-					if (line.split(",")[10].contains("N")) {
-						int index = 0;
-						for (int i = 0; i < 10; i++)
-							index = line.indexOf(",", index + 1);
-						line = new StringBuffer(line).insert(index, ",").toString();
-
-					}
-
-					int index = 0;
-					for (int i = 0; i < 9; i++)
-						index = line.indexOf(",", index + 1);
-					line = new StringBuffer(line).insert(index, ",").toString();
-					for (int i = 0; i < 6; i++)
-						index = line.indexOf(",", index + 1);
-					line = new StringBuffer(line).insert(index, ",").toString();
-
-				}
-				//ca 2 may bay ko co sector dk && END && do dai 13
-				if (line.split(",").length == 13 ) {
-					//mb 1 ko co sector dk
-					if (line.split(",")[5].contains("N")) {
-						int index = 0;
-						for (int i = 0; i < 5; i++)
-							index = line.indexOf(",", index + 1);
-						line = new StringBuffer(line).insert(index, ",").toString();
-
-					}
-
-					//mb 2 ko co sector dk
-					if (line.split(",")[10].contains("N")) {
-						int index = 0;
-						for (int i = 0; i < 10; i++)
-							index = line.indexOf(",", index + 1);
-						line = new StringBuffer(line).insert(index, ",").toString();
-
-					}
-
-					int index = 0;
-					for (int i = 0; i < 9; i++)
-						index = line.indexOf(",", index + 1);
-					line = new StringBuffer(line).insert(index, ",").toString();
-					for (int i = 0; i < 6; i++)
-						index = line.indexOf(",", index + 1);
-					line = new StringBuffer(line).insert(index, ",").toString();
-
-				}
-				//ca 2 may bay co sector dk && END && do dai 15
-				if (line.split(",").length == 15) {
-
-					int index = 0;
-					for (int i = 0; i < 9; i++)
-						index = line.indexOf(",", index + 1);
-					line = new StringBuffer(line).insert(index, ",").toString();
-					for (int i = 0; i < 6; i++)
-						index = line.indexOf(",", index + 1);
-					line = new StringBuffer(line).insert(index, ",").toString();
-
-				} 
-			}
-
-		}
-	
-//		// STCA VI, END thieu 2 truong nen chen 2 truong blank vao
-//		if ((line.contains("STCA") && line.contains("END")) || line.contains("STCA") && line.contains("VI")) {
-//			int index = 0;
-//			for (int i = 0; i < 9; i++)
-//				index = line.indexOf(",", index + 1);
-//			line = new StringBuffer(line).insert(index, ",").toString();
-//
-//			for (int i = 0; i < 6; i++)
-//				index = line.indexOf(",", index + 1);
-//			line = new StringBuffer(line).insert(index, ",").toString();
-//		}
-//
 		// dua loai canh bao (VI, PR, END) cua MSAW va APW cung cot voi cac canh bao cua
 		// STCA
 		if (line.contains("MSAW") || line.contains("APW")) {
@@ -942,6 +830,28 @@ public class event_RDP_tranform {
 				index = line.indexOf(",", index + 1);
 			line = new StringBuffer(line).insert(index, ",,,,,,,,,").toString();
 		}
+		
+		//neu PR VI END ko nam dung cot chua, cot 17, xuat report error ra textArea o duoi cua so
+		if (!stringContainAnElementFromListOfString(line.split(",")[16], Arrays.asList("PR", "VI", "END"))) {
+			textArea.append(new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime())+"\t"+ line+"\n");
+		}
+		
 		return line;
 	}
+
+	private boolean stringContainAnElementFromListOfString(String line,
+						List<String> list) {
+	
+					   String string = line;
+	
+					    boolean match = false;
+					    for (String s : list) {
+					       if(string.contains(s)){
+					           match = true;
+					           break;
+					       }
+					    }
+	//				   System.out.println(match);
+					return match;
+				}
 }
