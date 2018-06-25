@@ -27,16 +27,20 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import org.apache.poi.hssf.usermodel.HSSFHeader;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Header;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.util.CellRangeAddress;
+
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -454,7 +458,7 @@ public class event_RDP_tranform {
 							for (int k = 0; k < 3; k++) {
 							if (alertTypeChoosen[j]&&alertTypeChoosen[k+3]) {
 								
-								workbook.createSheet(selectedFile[i].getName() + alertTypes[j] + alertTypes[k + 3]);
+								workbook.createSheet(selectedFile[i].getName() +" "+ alertTypes[j] +" "+ alertTypes[k + 3]);
 							}
 							}
 						}
@@ -467,7 +471,15 @@ public class event_RDP_tranform {
 				      //.... code to print the sheet's values here
 				}
 				for (Sheet sheet:sheets) {
+					//table header
 					createHeaderRow(sheet);
+					//sheet header
+					Header header = sheet.getHeader();
+					header.setCenter(sheet.getSheetName());
+					sheet.setRepeatingRows(CellRangeAddress.valueOf("1:1"));
+//					header.setLeft("Left Header");
+//					header.setRight(HSSFHeader.font("Stencil-Normal", "Italic")
+//					+ HSSFHeader.fontSize((short) 10) + "Right Header");
 				}
 				
 				int[] rowCount = new int[workbook.getNumberOfSheets()];
@@ -476,7 +488,13 @@ public class event_RDP_tranform {
 				BufferedReader br = new BufferedReader(new FileReader(sourceFile));
 				String line = null;
 
-				
+				CellStyle cellStyleEND = workbook.createCellStyle();
+				cellStyleEND.setFillForegroundColor(IndexedColors.WHITE.getIndex());
+				cellStyleEND.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+				cellStyleEND.setBorderLeft(BorderStyle.THIN);
+				cellStyleEND.setBorderBottom(BorderStyle.THIN);
+				cellStyleEND.setBorderRight(BorderStyle.THIN);
+				cellStyleEND.setBorderTop(BorderStyle.THIN);
 				
 
 				while ((line = br.readLine()) != null) {
@@ -484,18 +502,18 @@ public class event_RDP_tranform {
 						
 						if (line.contains("PR")) {
 							
-							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"PR");
+							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h "+line.split(" ")[7]+" PR");
 							Row row = sheets.get(sheetIndex).createRow(++rowCount[sheetIndex]);
-							writeBook(line, row, null);
+							writeBook(line, row, cellStyleEND);
 							
 						} else if (line.contains("VI")) {
-							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"VI");
+							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h "+line.split(" ")[7]+" VI");
 							Row row = sheets.get(sheetIndex).createRow(++rowCount[sheetIndex]);
-							writeBook(line, row, null);
+							writeBook(line, row, cellStyleEND);
 						} else {
-							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h"+line.split(" ")[7]+"END");
+							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h "+line.split(" ")[7]+" END");
 							Row row = sheets.get(sheetIndex).createRow(++rowCount[sheetIndex]);
-							writeBook(line, row, null);
+							writeBook(line, row, cellStyleEND);
 
 						}
 					}
@@ -516,7 +534,7 @@ public class event_RDP_tranform {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 				JOptionPane.showMessageDialog(new JFrame(), "Excel file is opening, please close it!", "Dialog",
-				        JOptionPane.INFORMATION_MESSAGE);
+				        JOptionPane.ERROR_MESSAGE);
 				System.exit(0);
 			}
 				
@@ -661,6 +679,13 @@ public class event_RDP_tranform {
 //		font.setFontHeightInPoints((short) 16);
 		cellStyle.setFont(font);
 		
+		
+		
+		cellStyle.setBorderLeft(BorderStyle.THIN);
+		cellStyle.setBorderBottom(BorderStyle.THIN);
+		cellStyle.setBorderRight(BorderStyle.THIN);
+		cellStyle.setBorderTop(BorderStyle.THIN);
+		
 		List<String> lines = new ArrayList<String>();	
 		try {
 			File fileDir = new File("header.txt");
@@ -782,6 +807,7 @@ public class event_RDP_tranform {
 			
 		// xu ly STCA
 		if (line.contains("STCA")) {
+			//xu ly STCA PR
 			if (line.contains("PR")) {
 				//1 trong 2 may bay ko co sector dk && PR && do dai 17
 				if (line.split(",").length == 17) {
@@ -820,6 +846,7 @@ public class event_RDP_tranform {
 					}
 				} 
 			}
+			//xu ly STCA VI END
 			if (line.contains("VI")||line.contains("END")) {
 				//1 trong 2 may bay ko co sector dk && END && do dai 14
 				if (line.split(",").length == 14 ) {
