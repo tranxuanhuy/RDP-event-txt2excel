@@ -1,3 +1,4 @@
+STT
 Ngày
 Giờ (UTC)
 Server tạo cảnh báo

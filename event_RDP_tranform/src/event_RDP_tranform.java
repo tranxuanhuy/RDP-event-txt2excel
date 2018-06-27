@@ -72,6 +72,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.JTextPane;
 import javax.swing.JTextArea;
+import javax.swing.JToggleButton;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 
 public class event_RDP_tranform {
 
@@ -164,6 +169,16 @@ public class event_RDP_tranform {
 			}
 		});
 		topPanel.add(btnNewButton);
+		
+		JToggleButton tglbtnColorFill = new JToggleButton("Fill Color");
+		tglbtnColorFill.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent e) {
+table.repaint();
+			}
+		});
+		
+		
+		topPanel.add(tglbtnColorFill);
 		frmRdpEventTxtexcel.getContentPane().add(scrollPane);
 		
 		JPanel bottomPanel = new JPanel();
@@ -216,7 +231,7 @@ public class event_RDP_tranform {
 						}
 
 					}
-					JOptionPane.showMessageDialog(new JFrame(), "Transformation completed\nFile exported in data export folder", "Dialog",
+					JOptionPane.showMessageDialog(new JFrame(), "Transformation completed\nData loaded on table", "Dialog",
 					        JOptionPane.INFORMATION_MESSAGE);
 				}
 			}
@@ -226,16 +241,29 @@ public class event_RDP_tranform {
 				BufferedReader br = new BufferedReader(new FileReader(absolutePath));
 				String line = null;
 
+				List<String> headerRow = new ArrayList<String>();	
+				File fileDir = new File("header.txt");
+				
+				BufferedReader in = new BufferedReader(
+				   new InputStreamReader(
+		                      new FileInputStream(fileDir), "UTF8"));
+				        
+				String str;
+				      
+				while ((str = in.readLine()) != null) {
+					headerRow.add(str);
+				}
 				dm=new DefaultTableModel(
 						null,
-						new String[] {
-							"New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column", "New column"
-						}
+						headerRow.toArray()
 					);
+				int rowCount=0;
 				while ((line = br.readLine()) != null) {
 					
 					if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
 						line = lineTablingCorrection(line);
+						
+						line=++rowCount+","+line;
 						String[] rowdata= line.split(",");
 						dm.addRow(rowdata);
 					}
@@ -283,9 +311,13 @@ public class event_RDP_tranform {
 						{
 							c.setBackground(getBackground());
 							int modelRow = convertRowIndexToModel(row);
-							String type = (String)getModel().getValueAt(modelRow, 16);
-							if ("VI".equals(type)) c.setBackground(Color.RED);
-							if ("PR".equals(type)) c.setBackground(Color.YELLOW);
+							if (tglbtnColorFill.isSelected()) {
+								String type = (String) getModel().getValueAt(modelRow, 17);
+								if ("VI".equals(type))
+									c.setBackground(Color.RED);
+								if ("PR".equals(type))
+									c.setBackground(Color.YELLOW);
+							}
 						}
 
 						return c;
@@ -300,9 +332,6 @@ public class event_RDP_tranform {
 			}
 		});
 		mnFile.add(mntmOpen);
-		
-		JMenuItem menuItem = new JMenuItem("New menu item");
-		mnFile.add(menuItem);
 		
 		JMenu mnExport = new JMenu("Export");
 		menuBar.add(mnExport);
@@ -498,11 +527,15 @@ public class event_RDP_tranform {
 					createHeaderRow(sheet);
 					//sheet header
 					Header header = sheet.getHeader();
-					header.setCenter(sheet.getSheetName());
+					header.setCenter("Ngay "+sheet.getSheetName().split(" ")[0]+", "+sheet.getSheetName().split(" ")[1]+" "+sheet.getSheetName().split(" ")[2]);
 					sheet.setRepeatingRows(CellRangeAddress.valueOf("1:1"));
 //					header.setLeft("Left Header");
 //					header.setRight(HSSFHeader.font("Stencil-Normal", "Italic")
 //					+ HSSFHeader.fontSize((short) 10) + "Right Header");
+					
+					sheet.getPrintSetup().setScale((short)55);
+					sheet.getPrintSetup().setLandscape(true);
+					
 				}
 				
 				int[] rowCount = new int[workbook.getNumberOfSheets()];
@@ -584,7 +617,7 @@ public class event_RDP_tranform {
 				    
 				    boolean[] ret = new boolean[alertTypes.length];     
 
-				    int answer = JOptionPane.showConfirmDialog(null, new Object[]{"Choose gernes:", check}, "Genres" , JOptionPane.OK_CANCEL_OPTION);
+				    int answer = JOptionPane.showConfirmDialog(null, new Object[]{"Choose alerts type for exporting:", check}, "Choose alerts type" , JOptionPane.OK_CANCEL_OPTION);
 
 				    if(answer == JOptionPane.OK_OPTION)
 				    {
@@ -606,6 +639,13 @@ public class event_RDP_tranform {
 		menuBar.add(mnHelp);
 		
 		JMenuItem mntmAbout = new JMenuItem("About");
+		mntmAbout.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				JOptionPane.showMessageDialog(new JFrame(), "Phan mem dinh dang cac canh bao cua he thong RDP Aircon 2100 giup viec doc, trich xuat cac canh bao theo yeu cau de dang hon\nVersion 1.0", "About",
+				        JOptionPane.INFORMATION_MESSAGE);
+			
+			}
+		});
 		mnHelp.add(mntmAbout);
 	}
 
@@ -792,7 +832,12 @@ public class event_RDP_tranform {
 
 		// write data to workbook
 		Cell cell;
-		int i = 0;
+		//STT
+		cell = row.createCell(0);
+		cell.setCellValue(row.getRowNum());
+		cell.setCellStyle(cellStyle);
+		//data
+		int i = 1;
 		for (String infoInLine : line.split(",")) {
 			cell = row.createCell(i++);
 			cell.setCellValue(infoInLine);
@@ -804,11 +849,11 @@ public class event_RDP_tranform {
 	private String lineTablingCorrection(String line) {
 		line = line.replaceAll("      ", " ,").replaceAll("( +)"," ").trim().replace(", " , ",").replace(' ', ',');
 		
-		try {
-		    Files.write(Paths.get("myfile.txt"), (line+"\n").getBytes(), StandardOpenOption.APPEND);
-		}catch (IOException e) {
-		    //exception handling left as an exercise for the reader
-		}
+//		try {
+//		    Files.write(Paths.get("myfile.txt"), (line+"\n").getBytes(), StandardOpenOption.APPEND);
+//		}catch (IOException e) {
+//		    //exception handling left as an exercise for the reader
+//		}
 		
 		// STCA VI, END thieu 2 truong nen chen 2 truong blank vao
 		if ((line.contains("STCA") && line.contains("END")) || line.contains("STCA") && line.contains("VI")) {
