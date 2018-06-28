@@ -262,7 +262,7 @@ table.repaint();
 				while ((line = br.readLine()) != null) {
 					
 					if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
-						line = lineTablingCorrection(line);
+						line = lineSplittingCorrection(line);
 						
 						line=++rowCount+","+line;
 						String[] rowdata= line.split(",");
@@ -362,7 +362,7 @@ table.repaint();
 					
 					//form for user choose location where save the xls file
 					JFileChooser fileChooser1 = new JFileChooser(System.getProperty("user.dir") + "\\data export\\");
-					fileChooser.setDialogTitle("Specify a file to save");   	
+					fileChooser1.setDialogTitle("Specify a file to save");   	
 					int userSelection = fileChooser1.showSaveDialog(frmRdpEventTxtexcel);
 					File fileToSave=null;
 					if (userSelection == JFileChooser.APPROVE_OPTION) {
@@ -377,7 +377,7 @@ table.repaint();
 					try {
 						writeExcelColorFill(allContentFile.getAbsolutePath(),
 								excelFilePath);
-						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
+						JOptionPane.showMessageDialog(new JFrame(), "Transformation completed\nFile exported in data export folder", "Dialog",
 						        JOptionPane.INFORMATION_MESSAGE);
 					} catch (IOException e1) {
 						// TODO Auto-generated catch block
@@ -449,7 +449,7 @@ table.repaint();
 							//form for user choose location where save the xls file
 							JFileChooser fileChooser1 = new JFileChooser(
 									System.getProperty("user.dir") + "\\data export\\");
-							fileChooser.setDialogTitle("Specify a file to save");
+							fileChooser1.setDialogTitle("Specify a file to save");
 							int userSelection = fileChooser1.showSaveDialog(frmRdpEventTxtexcel);
 							File fileToSave = null;
 							if (userSelection == JFileChooser.APPROVE_OPTION) {
@@ -462,7 +462,7 @@ table.repaint();
 							String excelFilePath = fileToSave.getAbsolutePath() + ".xls";
 							try {
 								writeExcelPrintable(allContentFile.getAbsolutePath(), excelFilePath,alertTypeChoosen,selectedFile);
-								JOptionPane.showMessageDialog(new JFrame(), "Transformation completed", "Dialog",
+								JOptionPane.showMessageDialog(new JFrame(), "Transformation completed\nFile exported in data export folder", "Dialog",
 										JOptionPane.INFORMATION_MESSAGE);
 							} catch (IOException e1) {
 								// TODO Auto-generated catch block
@@ -563,16 +563,16 @@ table.repaint();
 							
 							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h "+line.split(" ")[7]+" PR");
 							Row row = sheets.get(sheetIndex).createRow(++rowCount[sheetIndex]);
-							writeBook(line, row, cellStyleEND);
+							writeBook(line, row, cellStyleEND, true);
 							
 						} else if (line.contains("VI")) {
 							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h "+line.split(" ")[7]+" VI");
 							Row row = sheets.get(sheetIndex).createRow(++rowCount[sheetIndex]);
-							writeBook(line, row, cellStyleEND);
+							writeBook(line, row, cellStyleEND, true);
 						} else {
 							int sheetIndex= workbook.getSheetIndex(line.split(" ")[1].replace('/', '_')+"_h "+line.split(" ")[7]+" END");
 							Row row = sheets.get(sheetIndex).createRow(++rowCount[sheetIndex]);
-							writeBook(line, row, cellStyleEND);
+							writeBook(line, row, cellStyleEND, true);
 
 						}
 					}
@@ -642,14 +642,41 @@ table.repaint();
 		mntmRowSelected.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				int[] rowSeletedIndexes= table.getSelectedRows();
+				
+				//sua index cac row sau khi filter cho dung de xuat ra
+					for (int i = 0; i < rowSeletedIndexes.length; i++) {
+						if (table.getRowSorter() != null) {
+							rowSeletedIndexes[i] = table.getRowSorter().convertRowIndexToModel(rowSeletedIndexes[i]);
+						} 
+					}
+					
 				ArrayList<String> rowSelectedData=new ArrayList<String>();
 				for (int rowSelectedIndex:rowSeletedIndexes) {
-					rowSelectedData.add(String.join(",", getRowAt(rowSelectedIndex, dm))); 
+					String rowData = String.join(",", getRowAt(rowSelectedIndex, dm));
+					rowSelectedData.add(rowData.replaceAll("null", "").substring(rowData.indexOf(",", 0)+1));
+					
 				}
 				
-				String excelFilePath = System.getProperty("user.dir") + "\\data export\\test.xls";
+				//form for user choose location where save the xls file
+				JFileChooser fileChooser1 = new JFileChooser(System.getProperty("user.dir") + "\\data export\\");
+				fileChooser1.setDialogTitle("Specify a file to save");   	
+				int userSelection = fileChooser1.showSaveDialog(frmRdpEventTxtexcel);
+				File fileToSave=null;
+				if (userSelection == JFileChooser.APPROVE_OPTION) {
+				    fileToSave = fileChooser1.getSelectedFile();
+				    System.out.println("Save as file: " + fileToSave.getAbsolutePath());
+				}
+				else {
+					return;
+				}
+		        
+				String excelFilePath = fileToSave.getAbsolutePath()+".xls";
 				writeExcelFromRowSelectedOnTable(rowSelectedData,
 						excelFilePath);
+				JOptionPane.showMessageDialog(new JFrame(), "Transformation completed\nFile exported in data export folder", "Dialog",
+				        JOptionPane.INFORMATION_MESSAGE);
+				
+				
 			}
 
 			private void writeExcelFromRowSelectedOnTable(ArrayList<String> rowSelectedData, String excelFilePath) {
@@ -691,11 +718,11 @@ table.repaint();
 					if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
 						Row row = sheet.createRow(++rowCount);
 						if (line.contains("PR")) {
-							writeBook(line, row, cellStylePR);
+							writeBook(line, row, cellStylePR, false);
 						} else if (line.contains("VI")) {
-							writeBook(line, row, cellStyleVI);
+							writeBook(line, row, cellStyleVI, false);
 						} else {
-							writeBook(line, row, cellStyleEND);
+							writeBook(line, row, cellStyleEND, false);
 
 						}
 					}
@@ -780,11 +807,11 @@ table.repaint();
 			if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
 				Row row = sheet.createRow(++rowCount);
 				if (line.contains("PR")) {
-					writeBook(line, row, cellStylePR);
+					writeBook(line, row, cellStylePR, true);
 				} else if (line.contains("VI")) {
-					writeBook(line, row, cellStyleVI);
+					writeBook(line, row, cellStyleVI, true);
 				} else {
-					writeBook(line, row, cellStyleEND);
+					writeBook(line, row, cellStyleEND, true);
 
 				}
 			}
@@ -920,9 +947,10 @@ table.repaint();
 	
 	}
 
-	private void writeBook(String line, Row row, CellStyle cellStyle) {
-		line = lineTablingCorrection(line);
-
+	private void writeBook(String line, Row row, CellStyle cellStyle, boolean exportFromTable) {
+		if (exportFromTable){
+			line = lineSplittingCorrection(line);
+		}
 		// write data to workbook
 		Cell cell;
 		//STT
@@ -939,7 +967,7 @@ table.repaint();
 
 	}
 
-	private String lineTablingCorrection(String line) {
+	private String lineSplittingCorrection(String line) {
 		line = line.replaceAll("      ", " ,").replaceAll("( +)"," ").trim().replace(", " , ",").replace(' ', ',');
 		
 //		try {
