@@ -73,6 +73,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.JTextPane;
 import javax.swing.JTextArea;
 import javax.swing.JToggleButton;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 import java.awt.event.ItemListener;
@@ -324,7 +325,9 @@ table.repaint();
 					}
 				};
 				
-				
+				table.setRowSelectionAllowed(true);
+				table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
 				table.setPreferredScrollableViewportSize(table.getPreferredSize());
 				table.changeSelection(0, 0, false, false);
 		        table.setAutoCreateRowSorter(true);
@@ -634,6 +637,96 @@ table.repaint();
 			}
 		});
 		mnExport.add(mntmPirintableExport);
+		
+		JMenuItem mntmRowSelected = new JMenuItem("Row selected");
+		mntmRowSelected.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int[] rowSeletedIndexes= table.getSelectedRows();
+				ArrayList<String> rowSelectedData=new ArrayList<String>();
+				for (int rowSelectedIndex:rowSeletedIndexes) {
+					rowSelectedData.add(String.join(",", getRowAt(rowSelectedIndex, dm))); 
+				}
+				
+				String excelFilePath = System.getProperty("user.dir") + "\\data export\\test.xls";
+				writeExcelFromRowSelectedOnTable(rowSelectedData,
+						excelFilePath);
+			}
+
+			private void writeExcelFromRowSelectedOnTable(ArrayList<String> rowSelectedData, String excelFilePath) {
+				 Workbook workbook = new HSSFWorkbook();
+				Sheet sheet = workbook.createSheet();
+
+				createHeaderRow(sheet);
+
+				int rowCount = 0;
+
+				
+				
+
+				CellStyle cellStylePR = sheet.getWorkbook().createCellStyle();
+				CellStyle cellStyleVI = sheet.getWorkbook().createCellStyle();
+				CellStyle cellStyleEND = sheet.getWorkbook().createCellStyle();
+
+				cellStylePR.setFillForegroundColor(IndexedColors.YELLOW.getIndex());
+				cellStylePR.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+				cellStyleVI.setFillForegroundColor(IndexedColors.RED.index);
+				cellStyleVI.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+				cellStyleEND.setFillForegroundColor(IndexedColors.WHITE.getIndex());
+				cellStyleEND.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+				cellStylePR.setBorderLeft(BorderStyle.THIN);
+				cellStylePR.setBorderBottom(BorderStyle.THIN);
+				cellStylePR.setBorderRight(BorderStyle.THIN);
+				cellStylePR.setBorderTop(BorderStyle.THIN);
+				cellStyleVI.setBorderLeft(BorderStyle.THIN);
+				cellStyleVI.setBorderBottom(BorderStyle.THIN);
+				cellStyleVI.setBorderRight(BorderStyle.THIN);
+				cellStyleVI.setBorderTop(BorderStyle.THIN);
+				cellStyleEND.setBorderLeft(BorderStyle.THIN);
+				cellStyleEND.setBorderBottom(BorderStyle.THIN);
+				cellStyleEND.setBorderRight(BorderStyle.THIN);
+				cellStyleEND.setBorderTop(BorderStyle.THIN);
+
+				
+				for( String line:rowSelectedData) {
+					if (line.contains("STCA") || line.contains("MSAW") || line.contains("APW")) {
+						Row row = sheet.createRow(++rowCount);
+						if (line.contains("PR")) {
+							writeBook(line, row, cellStylePR);
+						} else if (line.contains("VI")) {
+							writeBook(line, row, cellStyleVI);
+						} else {
+							writeBook(line, row, cellStyleEND);
+
+						}
+					}
+				}
+
+			
+				try (FileOutputStream outputStream = new FileOutputStream(excelFilePath)) {
+					workbook.write(outputStream);
+					
+				}
+			 catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				JOptionPane.showMessageDialog(new JFrame(), "Excel file is opening, please close it!", "Dialog",
+				        JOptionPane.INFORMATION_MESSAGE);
+				System.exit(0);
+			}
+				
+			}
+
+			private List<String> getRowAt(int row, DefaultTableModel model) {
+			    String[] result = new String[model.getColumnCount()];
+
+			     for (int i = 0; i < model.getColumnCount(); i++) {
+			         result[i] = (String) model.getValueAt(row, i);
+			     }
+
+			     return Arrays.asList(result);
+			}
+		});
+		mnExport.add(mntmRowSelected);
 		
 		JMenu mnHelp = new JMenu("Help");
 		menuBar.add(mnHelp);
