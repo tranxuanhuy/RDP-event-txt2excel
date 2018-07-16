@@ -773,7 +773,7 @@ public class event_RDP_tranform {
 		JMenuItem mntmAbout = new JMenuItem("About");
 		mntmAbout.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				JOptionPane.showMessageDialog(new JFrame(), "Phan mem dinh dang cac canh bao cua he thong RDP Aircon 2100 giup viec doc, trich xuat cac canh bao theo yeu cau de dang hon\nVersion 1.0", "About",
+				JOptionPane.showMessageDialog(new JFrame(), "Phan mem dinh dang cac canh bao cua he thong RDP Aircon 2100 giup viec doc, trich xuat cac canh bao theo yeu cau de dang hon\nVersion 1.1 0cb6a88", "About",
 						JOptionPane.INFORMATION_MESSAGE);
 
 			}
