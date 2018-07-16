@@ -5,7 +5,7 @@ Server tạo cảnh báo
 Loại cảnh báo
 SSR code máy bay 1
 Sector máy bay 1
-MSAW, APW: Vùng cảnh báo máy bay 1 - STCA: Vĩ độ máy bay 1
+MSAW, APW: Vùng cảnh báo máy bay - STCA: Vĩ độ máy bay 1
 Kinh độ máy bay 1
 Độ cao máy bay 1 (FL)
 Thời gian đến điểm xung đột của máy bay 1
