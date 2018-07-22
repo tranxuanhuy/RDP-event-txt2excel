@@ -533,15 +533,13 @@ public class event_RDP_tranform {
 					//					header.setRight(HSSFHeader.font("Stencil-Normal", "Italic")
 					//					+ HSSFHeader.fontSize((short) 10) + "Right Header");
 
-					Row row = sheet.getRow(0);
-					Cell cell= row.getCell(7);
+				
 
 					if (sheet.getSheetName().contains("STCA")) {
 						sheet.getPrintSetup().setScale((short) 55);
 						sheet.getPrintSetup().setLandscape(true);
 
-						cell.setCellValue("Vĩ độ máy bay 1");
-
+				
 					}
 					//msaw,apw
 					else {
@@ -552,8 +550,7 @@ public class event_RDP_tranform {
 							sheet.setColumnHidden(i, true);
 						}
 						sheet.setColumnHidden(18, true);
-						cell.setCellValue("Vùng cảnh báo máy bay");
-					}
+						}
 				}
 
 				int[] rowCount = new int[workbook.getNumberOfSheets()];
@@ -773,7 +770,7 @@ public class event_RDP_tranform {
 		JMenuItem mntmAbout = new JMenuItem("About");
 		mntmAbout.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				JOptionPane.showMessageDialog(new JFrame(), "Phan mem dinh dang cac canh bao cua he thong RDP Aircon 2100 giup viec doc, trich xuat cac canh bao theo yeu cau de dang hon\nVersion 1.1 0cb6a88", "About",
+				JOptionPane.showMessageDialog(new JFrame(), "Phan mem dinh dang cac canh bao cua he thong RDP Aircon 2100 giup viec doc, trich xuat cac canh bao theo yeu cau de dang hon\nVersion 1.1", "About",
 						JOptionPane.INFORMATION_MESSAGE);
 
 			}
@@ -933,7 +930,20 @@ public class event_RDP_tranform {
 		for (int i = 0; i < toppings.length; i++) {
 			cellTitle = row.createCell(i);
 			cellTitle.setCellStyle(cellStyle);
-			cellTitle.setCellValue(toppings[i]);
+			if (i==7) {
+				if (sheet.getSheetName().contains("STCA")) {
+					cellTitle.setCellValue(toppings[i].split("-")[1].split(":")[1]);
+				}
+				else if (sheet.getSheetName().contains("MSAW")||sheet.getSheetName().contains("APW")) {
+					cellTitle.setCellValue(toppings[i].split("-")[0].split(":")[1]);
+				}
+				else {
+					cellTitle.setCellValue(toppings[i]);
+				}
+			}
+			else {
+				cellTitle.setCellValue(toppings[i]);
+			}
 			sheet.setColumnWidth(i, 3000);
 
 		}
@@ -1027,6 +1037,8 @@ public class event_RDP_tranform {
 		//neu PR VI END ko nam dung cot chua, cot 17, xuat report error ra textArea o duoi cua so
 		if (!stringContainAnElementFromListOfString(line.split(",")[16], Arrays.asList("PR", "VI", "END"))) {
 			textArea.append(new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime())+"\t"+ line+"\n");
+		    JOptionPane.showMessageDialog(new JFrame(), "Please contact author because there are some exported data error!", "Error", JOptionPane.ERROR_MESSAGE);
+
 		}
 
 		return line;
