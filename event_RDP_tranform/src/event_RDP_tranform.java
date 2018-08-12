@@ -539,6 +539,12 @@ public class event_RDP_tranform {
 						sheet.getPrintSetup().setScale((short) 55);
 						sheet.getPrintSetup().setLandscape(true);
 
+						if(sheet.getSheetName().contains("STCA VI")) {
+							//canh bao stca vi thi ko can cot khoang cach den diem xung dot cua mb va thoi gian du doan xung dot
+							sheet.setColumnHidden(10, true);
+							sheet.setColumnHidden(16, true);
+							sheet.setColumnHidden(18, true);
+						}
 				
 					}
 					//msaw,apw
@@ -1027,15 +1033,28 @@ public class event_RDP_tranform {
 
 		// dua loai canh bao (VI, PR, END) cua MSAW va APW cung cot voi cac canh bao cua
 		// STCA
-		if (line.contains("MSAW") || line.contains("APW")) {
+		if (line.contains("MSAW") ) {
 			int index = 0;
 			for (int i = 0; i < 7; i++)
 				index = line.indexOf(",", index + 1);
 			line = new StringBuffer(line).insert(index, ",,,,,,,,,").toString();
 		}
-
+		if ( line.contains("APW")) {
+			if ( line.contains("END")) {
+				int index = 0;
+				for (int i = 0; i < 7; i++)
+					index = line.indexOf(",", index + 1);
+				line = new StringBuffer(line).insert(index, ",,,,,,,,,").toString();
+			}
+			if ( line.contains("OO")||line.contains("VI")) {
+				int index = 0;
+				for (int i = 0; i < 7; i++)
+					index = line.indexOf(",", index + 1);
+				line = new StringBuffer(line).insert(index, ",,,,,,,,").toString();
+			}
+		}
 		//neu PR VI END ko nam dung cot chua, cot 17, xuat report error ra textArea o duoi cua so
-		if (!stringContainAnElementFromListOfString(line.split(",")[16], Arrays.asList("PR", "VI", "END"))) {
+		if (!stringContainAnElementFromListOfString(line.split(",")[16], Arrays.asList("PR", "VI", "END","OO"))) {
 			textArea.append(new SimpleDateFormat("HH:mm:ss").format(Calendar.getInstance().getTime())+"\t"+ line+"\n");
 		    JOptionPane.showMessageDialog(new JFrame(), "Please contact author because there are some exported data error!", "Error", JOptionPane.ERROR_MESSAGE);
 
